@@ -21,7 +21,8 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "beautifulsoup4>=4.13.5",
-  "mineru-vl-utils>=0.1.8",
+  "mineru-vl-utils>=0.1.10",
+  "tqdm>=4.66,<5",
   "numpy>=2.3.3",
   "pillow>=11.3.0",
   "pypdfium2>=4.30.0",
