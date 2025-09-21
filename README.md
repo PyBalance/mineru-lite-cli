@@ -21,12 +21,12 @@ Before using this tool, you need to set up a VLLM server as described in the [Mi
 
 ### Using pip
 ```bash
-pip install mineru-lite-cli
+pip install git+https://github.com/PyBalance/mineru-lite-cli.git
 ```
 
 ### Using uv tool (global installation)
 ```bash
-uv tool install mineru-lite-cli
+uv tool install git+https://github.com/PyBalance/mineru-lite-cli.git
 ```
 
 ## Usage
@@ -137,12 +137,12 @@ This project is built upon the excellent work of the [MinerU](https://github.com
 
 ### 使用 pip
 ```bash
-pip install mineru-lite-cli
+pip install git+https://github.com/PyBalance/mineru-lite-cli.git
 ```
 
 ### 使用 uv tool（全局安装）
 ```bash
-uv tool install mineru-lite-cli
+uv tool install git+https://github.com/PyBalance/mineru-lite-cli.git
 ```
 
 ## 使用方法
