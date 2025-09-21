@@ -34,6 +34,6 @@ dependencies = [
 mineru-lite = "mineru_lite.main:main"
 
 [project.urls]
-Homepage = "https://github.com/<you>/mineru-lite-cli"
+Homepage = "https://github.com/PyBalance/mineru-lite-cli"
 Upstream = "https://github.com/opendatalab/MinerU"
 
