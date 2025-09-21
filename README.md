@@ -19,8 +19,14 @@ Before using this tool, you need to set up a VLLM server as described in the [Mi
 
 ## Installation
 
+### Using pip
 ```bash
 pip install mineru-lite-cli
+```
+
+### Using uv tool (global installation)
+```bash
+uv tool install mineru-lite-cli
 ```
 
 ## Usage
@@ -129,8 +135,14 @@ This project is built upon the excellent work of the [MinerU](https://github.com
 
 ## 安装
 
+### 使用 pip
 ```bash
 pip install mineru-lite-cli
+```
+
+### 使用 uv tool（全局安装）
+```bash
+uv tool install mineru-lite-cli
 ```
 
 ## 使用方法
