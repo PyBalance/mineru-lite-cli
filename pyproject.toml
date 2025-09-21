@@ -1,13 +1,27 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
 [project]
-name = "mineru-cli"
+name = "mineru-lite-cli"
 version = "0.1.0"
-description = "Add your description here"
+description = "Unofficial lightweight CLI for mineru-vl-utils (http-client → Markdown)"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 dependencies = [
     "beautifulsoup4>=4.13.5",
     "mineru-vl-utils>=0.1.8",
     "numpy>=2.3.3",
     "pillow>=11.3.0",
     "pypdfium2>=4.30.0",
+    "platformdirs>=4.2.0",
+    "tomli>=2.0.1; python_version < '3.11'",
+    "tomli-w>=1.0.0",
 ]
+
+[project.scripts]
+mineru-lite = "mineru_lite.main:main"
+
+[project.urls]
+Homepage = "https://github.com/<you>/mineru-lite-cli"
+Upstream = "https://github.com/opendatalab/MinerU"
