@@ -667,6 +667,134 @@ def _add_run_args(subparser):
         default=None,
     )
 
+def _add_summary_args(subparser):
+    """Add summary command arguments to subparser."""
+    subparser.add_argument("input", help="输入文件路径：仅支持 PDF")
+    subparser.add_argument(
+        "--pages",
+        help="页码选择（1-based）：例如 1,2 或 1-3 或 3- 或 -3 或 1,2,5-6；缺省为全部页",
+        default=None,
+    )
+
+def _human_bytes(n: int) -> str:
+    """Format bytes into human-readable string."""
+    units = ["B", "KB", "MB", "GB", "TB"]
+    s = float(n)
+    i = 0
+    while s >= 1024 and i < len(units) - 1:
+        s /= 1024.0
+        i += 1
+    # 保留两位（去掉多余的 0）
+    out = f"{s:.2f}".rstrip("0").rstrip(".")
+    return f"{out} {units[i]}"
+
+def _normalize_text(t: str) -> str:
+    """Normalize whitespace for preview."""
+    import re
+    t = t.replace("\r\n", "\n").replace("\r", "\n")
+    # 压缩多空格
+    t = re.sub(r"[ \t]+", " ", t)
+    # 限制连续空行
+    t = re.sub(r"\n{3,}", "\n\n", t)
+    return t.strip()
+
+def summarize_pdf(path: str, pages_spec: Optional[str]) -> None:
+    """Print a PDF summary using only its text layer (no backend)."""
+    if pdfium is None:
+        raise RuntimeError("需要 pypdfium2：pip install pypdfium2")
+    if not path.lower().endswith(".pdf"):
+        raise RuntimeError("summary 仅支持 PDF 文件。")
+
+    # 文件整体信息
+    file_size = os.path.getsize(path)
+    pdf = pdfium.PdfDocument(path)
+    total_pages = len(pdf)
+
+    wanted = parse_pages_spec(pages_spec, total_pages)
+    # 统计总字符数（含空白）
+    total_chars = 0
+
+    # 头部
+    print(f"{os.path.basename(path)} 的 summary")
+    print(f"文件大小: {_human_bytes(file_size)}")
+    print(f"总页数: {total_pages}")
+
+    # 先遍历统计每页，顺便累计总字符
+    per_page_info = []
+    for i in wanted:
+        page = pdf[i]
+        width_pt, height_pt = page.get_size()  # pt
+        # mm 近似
+        mm_per_pt = 25.4 / 72.0
+        w_mm = width_pt * mm_per_pt
+        h_mm = height_pt * mm_per_pt
+        orient = "纵向" if height_pt >= width_pt else "横向"
+
+        text = ""
+        page_chars = 0
+        try:
+            tp = page.get_textpage()
+            try:
+                # 方式1：按总字符数读取（优先）
+                n = tp.count_chars()
+                page_chars = int(n)
+                text = tp.get_text_range(0, n) if n > 0 else ""
+            except Exception:
+                # 方式2：回退到全页包围盒
+                try:
+                    text = tp.get_text_bounded(0, 0, width_pt, height_pt)  # 若 API 支持
+                    page_chars = len(text)
+                except Exception:
+                    text = ""
+                    page_chars = 0
+        except Exception:
+            # 无法提取文字（如受保护/扫描件）
+            text = ""
+            page_chars = 0
+
+        total_chars += page_chars
+        per_page_info.append({
+            "index": i + 1,  # 1-based
+            "w_pt": width_pt, "h_pt": height_pt,
+            "w_mm": w_mm, "h_mm": h_mm,
+            "orient": orient,
+            "chars": page_chars,
+            "text": text,
+        })
+
+    print(f"总字符数（文字层，含空白）: {total_chars}")
+    print()
+
+    # 逐页输出
+    for info in per_page_info:
+        idx = info["index"]
+        wpt, hpt = info["w_pt"], info["h_pt"]
+        wmm, hmm = info["w_mm"], info["h_mm"]
+        orient = info["orient"]
+        chars = info["chars"]
+        text = info["text"]
+
+        print(f"=== Page {idx} ===")
+        print(f"尺寸: {int(wpt)} x {int(hpt)} pt (≈ {wmm:.1f} x {hmm:.1f} mm), {orient}")
+        print(f"文字层字数: {chars}")
+
+        norm = _normalize_text(text)
+        if not norm:
+            print("无文字层(但可能包含扫描件)")
+            print()
+            continue
+
+        head = norm[:100]
+        tail = norm[-30:] if len(norm) > 30 else norm
+        # 为了阅读清晰，单独标头
+        print("文字预览：")
+        print("开头[最多100字]:")
+        print(head)
+        print()
+        print("结尾[最多30字]:")
+        print(tail)
+        print()
+
 
 def main(argv=None):
     """Main entry point for the CLI."""
@@ -681,6 +809,10 @@ def main(argv=None):
     # Default run command
     run_p = subparsers.add_parser("run", help="运行转换")
     _add_run_args(run_p)
+
+    # Summary command
+    sum_p = subparsers.add_parser("summary", help="仅基于 PDF 文字层的摘要（不调用后端）")
+    _add_summary_args(sum_p)
 
     # Config command
     cfg_p = subparsers.add_parser("config", help="查看/设置/重置 配置")
@@ -721,6 +853,12 @@ def main(argv=None):
         elif cmd == "wizard" or cmd is None:
             interactive_config(load_config())
             return
+
+    # Summary workflow
+    if args.command == "summary":
+        path = args.input
+        summarize_pdf(path, getattr(args, "pages", None))
+        return
 
     # Run workflow
     if getattr(args, "configure", False):
